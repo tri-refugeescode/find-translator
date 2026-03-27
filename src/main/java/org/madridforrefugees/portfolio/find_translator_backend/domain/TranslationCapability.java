@@ -4,13 +4,12 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Set;
 
-import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
-
+import static org.apache.commons.collections4.CollectionUtils.size;
 
 public record TranslationCapability(Set<String> proficientLanguages) {
 
     public boolean isValid() {
-        return isNotEmpty(proficientLanguages)
+        return size(proficientLanguages) >= 2
                 && proficientLanguages.stream().noneMatch(StringUtils::isBlank);
 
     }
