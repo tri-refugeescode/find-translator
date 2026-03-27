@@ -3,6 +3,7 @@ package org.madridforrefugees.portfolio.find_translator_backend.handler;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.NonNull;
+import org.madridforrefugees.portfolio.find_translator_backend.domain.TranslationCapability;
 import org.madridforrefugees.portfolio.find_translator_backend.domain.TranslationNeed;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -14,17 +15,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @RequiredArgsConstructor
-public class FindTranslatorHandler extends TextWebSocketHandler {
+public class OfferTranslationHandler extends TextWebSocketHandler {
 
     private final ObjectMapper objectMapper;
-    private final Map<WebSocketSession, Pair<TextMessage, TranslationNeed>> sessions = new ConcurrentHashMap<>();
+    private final Map<WebSocketSession, Pair<TextMessage, TranslationCapability>> sessions = new ConcurrentHashMap<>();
 
     @Override
     public void handleTextMessage(@NonNull WebSocketSession session,
                                   @NonNull TextMessage message) {
-        var translationNeed = objectMapper.readValue(message.getPayload(), TranslationNeed.class);
-        if (translationNeed.isValid()) {
-            sessions.put(session, Pair.of(message, translationNeed));
+        var translationCapability = objectMapper.readValue(message.getPayload(), TranslationCapability.class);
+        if (translationCapability.isValid()) {
+            sessions.put(session, Pair.of(message, translationCapability));
         }
     }
 

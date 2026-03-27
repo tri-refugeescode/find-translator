@@ -2,6 +2,7 @@ package org.madridforrefugees.portfolio.find_translator_backend.config;
 
 import lombok.RequiredArgsConstructor;
 import org.madridforrefugees.portfolio.find_translator_backend.handler.FindTranslatorHandler;
+import org.madridforrefugees.portfolio.find_translator_backend.handler.OfferTranslationHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,13 +22,22 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        var allowedOrigins = webSocketProperties.allowedOrigins().toArray(new String[0]);
+
         registry.addHandler(findTranslatorHandler(), "/find-translator-signal")
-                .setAllowedOrigins(webSocketProperties.allowedOrigins().toArray(new String[0]));
+                .setAllowedOrigins(allowedOrigins);
+        registry.addHandler(offerTranslationHandler(), "/offer-translation-signal")
+                .setAllowedOrigins(allowedOrigins);
     }
 
     @Bean
     public WebSocketHandler findTranslatorHandler() {
         return new FindTranslatorHandler(objectMapper);
+    }
+
+    @Bean
+    public WebSocketHandler offerTranslationHandler() {
+        return new OfferTranslationHandler(objectMapper);
     }
 
 }
