@@ -10,6 +10,7 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 @RequiredArgsConstructor
@@ -23,11 +24,27 @@ public class OfferTranslationHandler extends TextWebSocketHandler {
     public void handleTextMessage(@NonNull WebSocketSession session,
                                   @NonNull TextMessage message) {
         var messageContent = objectMapper.readTree(message.getPayload());
+        var eventType = messageContent.path("eventType").stringValue();
+        if (eventType.equals("offer-translation")) {
+            handleOfferTranslation(session, message, messageContent);
+        } else if (eventType.equals("register-candidate")) {
+            handleRegisterCandidate(session, message);
+        }
+    }
+
+    private void handleOfferTranslation(WebSocketSession session,
+                                        TextMessage message,
+                                        JsonNode messageContent) {
         var translationCapability = objectMapper.treeToValue(messageContent.path("translationCapability"), TranslationCapability.class);
         if (translationCapability.isValid()) {
             offerTranslationRepository.sessions().put(session, Pair.of(message, translationCapability));
             translatorMatchingService.matchOnOffer(translationCapability, session, message);
         }
+    }
+
+    private void handleRegisterCandidate(WebSocketSession session,
+                                         TextMessage message) {
+        translatorMatchingService.forwardIceCandidate(session, false, message);
     }
 
     @Override
