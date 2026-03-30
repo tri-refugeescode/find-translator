@@ -22,7 +22,8 @@ public class FindTranslatorHandler extends TextWebSocketHandler {
     @Override
     public void handleTextMessage(@NonNull WebSocketSession session,
                                   @NonNull TextMessage message) {
-        var translationNeed = objectMapper.readValue(message.getPayload(), TranslationNeed.class);
+        var messageContent = objectMapper.readTree(message.getPayload());
+        var translationNeed = objectMapper.treeToValue(messageContent.path("translationNeed"), TranslationNeed.class);
         if (translationNeed.isValid()) {
             findTranslatorRepository.sessions().put(session, Pair.of(message, translationNeed));
             translatorMatchingService.matchOnFind(translationNeed, session, message);
@@ -31,7 +32,7 @@ public class FindTranslatorHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) {
-        findTranslatorRepository.sessions().put(session, null);
+        findTranslatorRepository.sessions().put(session, Pair.of(null, null));
     }
 
     @Override

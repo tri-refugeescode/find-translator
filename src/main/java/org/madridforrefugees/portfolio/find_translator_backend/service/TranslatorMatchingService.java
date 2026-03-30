@@ -22,6 +22,7 @@ public class TranslatorMatchingService {
                                 WebSocketSession offerSession,
                                 TextMessage offerMessage) {
         var matchedFindSession = findTranslatorRepository.sessions().entrySet().stream()
+                .filter(e -> e.getValue().getRight() != null)
                 .filter(e -> translationPossible(e.getValue().getRight(), capability))
                 .findAny();
         if (matchedFindSession.isPresent()) {
@@ -39,6 +40,7 @@ public class TranslatorMatchingService {
                                WebSocketSession findSession,
                                TextMessage findMessage) {
         var matchedOfferSession = offerTranslationRepository.sessions().entrySet().stream()
+                .filter(e -> e.getValue().getRight() != null)
                 .filter(e -> translationPossible(need, e.getValue().getRight()))
                 .findAny();
         if (matchedOfferSession.isPresent()) {

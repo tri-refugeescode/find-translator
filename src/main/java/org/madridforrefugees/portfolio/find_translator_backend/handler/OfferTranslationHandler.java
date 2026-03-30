@@ -22,7 +22,8 @@ public class OfferTranslationHandler extends TextWebSocketHandler {
     @Override
     public void handleTextMessage(@NonNull WebSocketSession session,
                                   @NonNull TextMessage message) {
-        var translationCapability = objectMapper.readValue(message.getPayload(), TranslationCapability.class);
+        var messageContent = objectMapper.readTree(message.getPayload());
+        var translationCapability = objectMapper.treeToValue(messageContent.path("translationCapability"), TranslationCapability.class);
         if (translationCapability.isValid()) {
             offerTranslationRepository.sessions().put(session, Pair.of(message, translationCapability));
             translatorMatchingService.matchOnOffer(translationCapability, session, message);
@@ -31,7 +32,7 @@ public class OfferTranslationHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) {
-        offerTranslationRepository.sessions().put(session, null);
+        offerTranslationRepository.sessions().put(session, Pair.of(null, null));
     }
 
     @Override
