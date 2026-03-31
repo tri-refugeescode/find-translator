@@ -8,6 +8,7 @@ import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
 
 public record TranslationNeed(Set<String> understoodLanguages, Set<String> requiredLanguages) {
+    public static final String PATH = "translationNeed";
 
     public boolean isValid() {
         return isNotEmpty(understoodLanguages) && isNotEmpty(requiredLanguages)

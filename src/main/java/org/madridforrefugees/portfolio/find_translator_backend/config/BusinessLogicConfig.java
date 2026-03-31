@@ -5,18 +5,16 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
+import org.madridforrefugees.portfolio.find_translator_backend.domain.SessionData;
 import org.madridforrefugees.portfolio.find_translator_backend.domain.TranslationCapability;
 import org.madridforrefugees.portfolio.find_translator_backend.domain.TranslationNeed;
 import org.madridforrefugees.portfolio.find_translator_backend.handler.FindTranslatorHandler;
 import org.madridforrefugees.portfolio.find_translator_backend.handler.OfferTranslationHandler;
-import org.madridforrefugees.portfolio.find_translator_backend.repository.FindTranslatorRepository;
-import org.madridforrefugees.portfolio.find_translator_backend.repository.OfferTranslationRepository;
+import org.madridforrefugees.portfolio.find_translator_backend.repository.SessionRepository;
 import org.madridforrefugees.portfolio.find_translator_backend.service.TranslatorMatchingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import tools.jackson.databind.ObjectMapper;
 
@@ -29,47 +27,47 @@ public class BusinessLogicConfig {
     private final TranslatorMatchingProperties translatorMatchingProperties;
 
     @Bean
-    public FindTranslatorRepository findTranslatorRepository() {
-        Cache<WebSocketSession, Pair<TextMessage, TranslationNeed>> cache = Caffeine.newBuilder()
+    public SessionRepository<TranslationNeed> findTranslatorRepository() {
+        Cache<WebSocketSession, SessionData<TranslationNeed>> cache = Caffeine.newBuilder()
                 .expireAfterWrite(translatorMatchingProperties.findActiveTime())
                 .maximumSize(translatorMatchingProperties.maxFindSessions())
                 .evictionListener(BusinessLogicConfig::closeSessionOnEviction)
                 .weakKeys()
                 .build();
-        return new FindTranslatorRepository(cache.asMap());
+        return new SessionRepository<>(cache.asMap());
     }
 
     @Bean
-    public OfferTranslationRepository offerTranslationRepository() {
-        Cache<WebSocketSession, Pair<TextMessage, TranslationCapability>> cache = Caffeine.newBuilder()
+    public SessionRepository<TranslationCapability> offerTranslationRepository() {
+        Cache<WebSocketSession, SessionData<TranslationCapability>> cache = Caffeine.newBuilder()
                 .expireAfterWrite(translatorMatchingProperties.offerActiveTime())
                 .maximumSize(translatorMatchingProperties.maxOfferSessions())
                 .evictionListener(BusinessLogicConfig::closeSessionOnEviction)
                 .weakKeys()
                 .build();
-        return new OfferTranslationRepository(cache.asMap());
+        return new SessionRepository<>(cache.asMap());
     }
 
     @Bean
-    public TranslatorMatchingService translatorMatchingService(FindTranslatorRepository findTranslatorRepository,
-                                                               OfferTranslationRepository offerTranslationRepository) {
+    public TranslatorMatchingService translatorMatchingService(SessionRepository<TranslationNeed> findTranslatorRepository,
+                                                               SessionRepository<TranslationCapability> offerTranslationRepository) {
         return new TranslatorMatchingService(findTranslatorRepository, offerTranslationRepository);
     }
 
     @Bean
-    public FindTranslatorHandler findTranslatorHandler(FindTranslatorRepository findTranslatorRepository,
+    public FindTranslatorHandler findTranslatorHandler(SessionRepository<TranslationNeed> findTranslatorRepository,
                                                        TranslatorMatchingService translatorMatchingService) {
         return new FindTranslatorHandler(findTranslatorRepository, objectMapper, translatorMatchingService);
     }
 
     @Bean
-    public OfferTranslationHandler offerTranslationHandler(OfferTranslationRepository offerTranslationRepository,
+    public OfferTranslationHandler offerTranslationHandler(SessionRepository<TranslationCapability> offerTranslationRepository,
                                                            TranslatorMatchingService translatorMatchingService) {
         return new OfferTranslationHandler(offerTranslationRepository, objectMapper, translatorMatchingService);
     }
 
     private static void closeSessionOnEviction(WebSocketSession session,
-                                               Pair<?, ?> message,
+                                               SessionData<?> sessionData,
                                                RemovalCause cause) {
         if (session.isOpen()) {
             try {
