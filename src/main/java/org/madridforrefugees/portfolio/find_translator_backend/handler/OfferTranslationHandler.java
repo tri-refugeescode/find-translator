@@ -41,7 +41,15 @@ public class OfferTranslationHandler extends BaseHandler<TranslationCapability> 
         var translationCapability = objectMapper.treeToValue(messageContent.path(TranslationCapability.PATH), TranslationCapability.class);
         if (translationCapability.isValid()) {
             sessionRepository.sessions().put(session, new SessionData<>(translationCapability, message, null));
-            translatorMatchingService.matchOnOffer(translationCapability, session, message);
+        }
+    }
+
+    void handleRegisterCandidate(WebSocketSession session,
+                                 TextMessage message) {
+        SessionData<TranslationCapability> sessionData = sessionRepository.sessions().get(session);
+        if (sessionData != null) {
+            sessionData.setCandidateMessage(message);
+            translatorMatchingService.matchOnOffer(session, sessionData);
         }
     }
 

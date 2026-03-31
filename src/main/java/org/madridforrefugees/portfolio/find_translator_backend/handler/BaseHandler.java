@@ -6,7 +6,6 @@ import org.madridforrefugees.portfolio.find_translator_backend.domain.SessionDat
 import org.madridforrefugees.portfolio.find_translator_backend.repository.SessionRepository;
 import org.madridforrefugees.portfolio.find_translator_backend.service.TranslatorMatchingService;
 import org.springframework.web.socket.CloseStatus;
-import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import tools.jackson.databind.ObjectMapper;
@@ -17,14 +16,6 @@ abstract class BaseHandler<T> extends TextWebSocketHandler {
     final SessionRepository<T> sessionRepository;
     final ObjectMapper objectMapper;
     final TranslatorMatchingService translatorMatchingService;
-
-    void handleRegisterCandidate(WebSocketSession session,
-                                 TextMessage message) {
-        SessionData<T> sessionData = sessionRepository.sessions().get(session);
-        if (sessionData != null) {
-            sessionData.candidateMessage(message);
-        }
-    }
 
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) {

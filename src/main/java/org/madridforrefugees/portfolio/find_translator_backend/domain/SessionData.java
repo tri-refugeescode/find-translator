@@ -9,7 +9,7 @@ import org.springframework.web.socket.TextMessage;
 
 @Getter
 @Setter
-@Accessors(fluent = true)
+@Accessors(chain = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class SessionData<T> {

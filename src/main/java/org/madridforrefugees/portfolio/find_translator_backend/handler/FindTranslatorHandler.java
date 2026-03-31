@@ -40,7 +40,15 @@ public class FindTranslatorHandler extends BaseHandler<TranslationNeed> {
         var translationNeed = objectMapper.treeToValue(messageContent.path(TranslationNeed.PATH), TranslationNeed.class);
         if (translationNeed.isValid()) {
             sessionRepository.sessions().put(session, new SessionData<>(translationNeed, message, null));
-            translatorMatchingService.matchOnFind(translationNeed, session, message);
+        }
+    }
+
+    void handleRegisterCandidate(WebSocketSession session,
+                                 TextMessage message) {
+        SessionData<TranslationNeed> sessionData = sessionRepository.sessions().get(session);
+        if (sessionData != null) {
+            sessionData.setCandidateMessage(message);
+            translatorMatchingService.matchOnFind(session, sessionData);
         }
     }
 
