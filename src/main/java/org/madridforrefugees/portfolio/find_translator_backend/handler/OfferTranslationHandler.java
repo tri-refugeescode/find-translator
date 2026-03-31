@@ -28,9 +28,9 @@ public class OfferTranslationHandler extends BaseHandler<TranslationCapability> 
                                   @NonNull TextMessage message) {
         var messageContent = objectMapper.readTree(message.getPayload());
         var eventType = messageContent.path(EventType.PATH).stringValue();
-        if (OFFER_TRANSLATION.name().equals(eventType)) {
+        if (OFFER_TRANSLATION.text().equals(eventType)) {
             handleOfferTranslation(session, message, messageContent);
-        } else if (REGISTER_CANDIDATE.name().equals(eventType)) {
+        } else if (REGISTER_CANDIDATE.text().equals(eventType)) {
             handleRegisterCandidate(session, message);
         }
     }

@@ -27,9 +27,9 @@ public class FindTranslatorHandler extends BaseHandler<TranslationNeed> {
                                   @NonNull TextMessage message) {
         var messageContent = objectMapper.readTree(message.getPayload());
         var eventType = messageContent.path(EventType.PATH).stringValue();
-        if (FIND_TRANSLATOR.name().equals(eventType)) {
+        if (FIND_TRANSLATOR.text().equals(eventType)) {
             handleFindTranslator(session, message, messageContent);
-        } else if (REGISTER_CANDIDATE.name().equals(eventType)) {
+        } else if (REGISTER_CANDIDATE.text().equals(eventType)) {
             handleRegisterCandidate(session, message);
         }
     }
