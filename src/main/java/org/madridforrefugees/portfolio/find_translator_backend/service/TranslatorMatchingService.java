@@ -50,6 +50,11 @@ public class TranslatorMatchingService {
         }
     }
 
+    private boolean translationPossible(TranslationNeed need, TranslationCapability capability) {
+        return capability.proficientLanguages().stream().anyMatch(l -> need.understoodLanguages().contains(l))
+                && capability.proficientLanguages().stream().anyMatch(l -> need.requiredLanguages().contains(l));
+    }
+
     private void moveToMatchedSessions(WebSocketSession findSession,
                                        SessionData<TranslationNeed> findData,
                                        WebSocketSession offerSession,
@@ -66,14 +71,23 @@ public class TranslatorMatchingService {
                 findSession.sendMessage(offerData.getRtcMessage());
                 findSession.sendMessage(offerData.getCandidateMessage());
             } catch (IOException e) {
-                log.error("Error exchanging offer message to find sessions: {}", findSession.getId(), e);
+                log.error("Error exchanging offer message to find session: {}", findSession.getId(), e);
             }
         }
     }
 
-    private boolean translationPossible(TranslationNeed need, TranslationCapability capability) {
-        return capability.proficientLanguages().stream().anyMatch(l -> need.understoodLanguages().contains(l))
-                && capability.proficientLanguages().stream().anyMatch(l -> need.requiredLanguages().contains(l));
+    public void exchangeAccept(WebSocketSession findSession) {
+        var data = matchedSessionsRepository.matchedSessions().get(findSession);
+        if (data != null && data.getMiddle().isOpen()) {
+            var offerSession = data.getMiddle();
+            var findData = data.getLeft();
+            try {
+                offerSession.sendMessage(findData.getRtcMessage());
+                offerSession.sendMessage(findData.getCandidateMessage());
+            } catch (IOException e) {
+                log.error("Error exchanging accept message to offer session: {}", offerSession.getId(), e);
+            }
+        }
     }
 
 }

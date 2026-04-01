@@ -12,8 +12,7 @@ import org.springframework.web.socket.WebSocketSession;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-import static org.madridforrefugees.portfolio.find_translator_backend.domain.EventType.FIND_TRANSLATOR;
-import static org.madridforrefugees.portfolio.find_translator_backend.domain.EventType.REGISTER_CANDIDATE;
+import static org.madridforrefugees.portfolio.find_translator_backend.domain.EventType.*;
 
 public class FindTranslatorHandler extends BaseHandler<TranslationNeed> {
 
@@ -34,6 +33,8 @@ public class FindTranslatorHandler extends BaseHandler<TranslationNeed> {
         var eventType = messageContent.path(EventType.PATH).stringValue();
         if (FIND_TRANSLATOR.text().equals(eventType)) {
             handleFindTranslator(session, message, messageContent);
+        } else if (ACCEPT_TRANSLATOR.text().equals(eventType)) {
+            handleAcceptTranslator(session, message);
         } else if (REGISTER_CANDIDATE.text().equals(eventType)) {
             handleRegisterCandidate(session, message);
         }
@@ -50,11 +51,20 @@ public class FindTranslatorHandler extends BaseHandler<TranslationNeed> {
         }
     }
 
+    void handleAcceptTranslator(WebSocketSession session,
+                                TextMessage message) {
+        var data = matchedSessionsRepository.matchedSessions().get(session);
+        if (data != null) {
+            data.getLeft().setRtcMessage(message);
+        }
+    }
+
     void handleRegisterCandidate(WebSocketSession session,
                                  TextMessage message) {
         var data = matchedSessionsRepository.matchedSessions().get(session);
         if (data != null) {
             data.getLeft().setCandidateMessage(message);
+            translatorMatchingService.exchangeAccept(session);
         }
     }
 
