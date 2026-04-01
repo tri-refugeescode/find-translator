@@ -12,6 +12,7 @@ public enum EventType {
     REGISTER_CANDIDATE("register-candidate");
 
     public static final String PATH = "eventType";
+    public static final String ICE_PATH = "iceCandidate";
     private final String text;
 
     EventType(String text) {

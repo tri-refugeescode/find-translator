@@ -36,7 +36,11 @@ public class FindTranslatorHandler extends BaseHandler<TranslationNeed> {
         } else if (ACCEPT_TRANSLATOR.text().equals(eventType)) {
             handleAcceptTranslator(session, message);
         } else if (REGISTER_CANDIDATE.text().equals(eventType)) {
-            handleRegisterCandidate(session, message);
+            if (messageContent.hasNonNull(EventType.ICE_PATH)) {
+                handleRegisterCandidate(session, message);
+            } else {
+                handleEndCandidates(session);
+            }
         }
     }
 
@@ -45,7 +49,7 @@ public class FindTranslatorHandler extends BaseHandler<TranslationNeed> {
                                       JsonNode messageContent) {
         var translationNeed = objectMapper.treeToValue(messageContent.path(TranslationNeed.PATH), TranslationNeed.class);
         if (translationNeed.isValid()) {
-            var sessionData = new SessionData<>(translationNeed, message, null);
+            var sessionData = new SessionData<>(translationNeed, message);
             sessionRepository.sessions().put(session, sessionData);
             translatorMatchingService.matchOnFind(session, sessionData);
         }
@@ -63,9 +67,12 @@ public class FindTranslatorHandler extends BaseHandler<TranslationNeed> {
                                  TextMessage message) {
         var data = matchedSessionsRepository.matchedSessions().get(session);
         if (data != null) {
-            data.getLeft().setCandidateMessage(message);
-            translatorMatchingService.exchangeAccept(session);
+            data.getLeft().addCandidateMessage(message);
         }
+    }
+
+    private void handleEndCandidates(WebSocketSession session) {
+        translatorMatchingService.exchangeAccept(session);
     }
 
 }

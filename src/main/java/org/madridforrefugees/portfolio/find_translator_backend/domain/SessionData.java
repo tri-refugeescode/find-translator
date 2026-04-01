@@ -1,11 +1,11 @@
 package org.madridforrefugees.portfolio.find_translator_backend.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.Accessors;
 import org.springframework.web.socket.TextMessage;
+
+import java.util.LinkedList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,14 +15,19 @@ import org.springframework.web.socket.TextMessage;
 public class SessionData<T> {
     private T translationInfo;
     private TextMessage rtcMessage;
-    private TextMessage candidateMessage;
+    @Setter(AccessLevel.NONE)
+    private final List<TextMessage> candidateMessages = new LinkedList<>();
+
+    public void addCandidateMessage(TextMessage candidateMessage) {
+        this.candidateMessages.add(candidateMessage);
+    }
 
     public boolean hasInfo() {
         return translationInfo != null;
     }
 
     public boolean isComplete() {
-        return translationInfo != null && rtcMessage != null && candidateMessage != null;
+        return translationInfo != null && rtcMessage != null && !candidateMessages.isEmpty();
     }
 
 }

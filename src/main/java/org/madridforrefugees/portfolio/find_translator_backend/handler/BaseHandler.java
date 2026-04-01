@@ -19,7 +19,7 @@ abstract class BaseHandler<T> extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) {
-        sessionRepository.sessions().put(session, new SessionData<>(null, null, null));
+        sessionRepository.sessions().put(session, new SessionData<>(null, null));
     }
 
     @Override

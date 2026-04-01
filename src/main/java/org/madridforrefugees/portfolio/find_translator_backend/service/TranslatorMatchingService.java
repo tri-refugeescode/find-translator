@@ -69,7 +69,9 @@ public class TranslatorMatchingService {
         if (findSession.isOpen()) {
             try {
                 findSession.sendMessage(offerData.getRtcMessage());
-                findSession.sendMessage(offerData.getCandidateMessage());
+                for (var candidate : offerData.getCandidateMessages()) {
+                    findSession.sendMessage(candidate);
+                }
             } catch (IOException e) {
                 log.error("Error exchanging offer message to find session: {}", findSession.getId(), e);
             }
@@ -83,7 +85,9 @@ public class TranslatorMatchingService {
             var findData = data.getLeft();
             try {
                 offerSession.sendMessage(findData.getRtcMessage());
-                offerSession.sendMessage(findData.getCandidateMessage());
+                for (var candidate : findData.getCandidateMessages()) {
+                    offerSession.sendMessage(candidate);
+                }
             } catch (IOException e) {
                 log.error("Error exchanging accept message to offer session: {}", offerSession.getId(), e);
             }

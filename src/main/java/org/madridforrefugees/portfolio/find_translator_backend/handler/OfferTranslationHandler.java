@@ -31,7 +31,11 @@ public class OfferTranslationHandler extends BaseHandler<TranslationCapability> 
         if (OFFER_TRANSLATION.text().equals(eventType)) {
             handleOfferTranslation(session, message, messageContent);
         } else if (REGISTER_CANDIDATE.text().equals(eventType)) {
-            handleRegisterCandidate(session, message);
+            if (messageContent.hasNonNull(EventType.ICE_PATH)) {
+                handleRegisterCandidate(session, message);
+            } else {
+                handleEndCandidates(session);
+            }
         }
     }
 
@@ -40,15 +44,20 @@ public class OfferTranslationHandler extends BaseHandler<TranslationCapability> 
                                         JsonNode messageContent) {
         var translationCapability = objectMapper.treeToValue(messageContent.path(TranslationCapability.PATH), TranslationCapability.class);
         if (translationCapability.isValid()) {
-            sessionRepository.sessions().put(session, new SessionData<>(translationCapability, message, null));
+            sessionRepository.sessions().put(session, new SessionData<>(translationCapability, message));
         }
     }
 
-    void handleRegisterCandidate(WebSocketSession session,
-                                 TextMessage message) {
+    void handleRegisterCandidate(WebSocketSession session, TextMessage message) {
         SessionData<TranslationCapability> sessionData = sessionRepository.sessions().get(session);
         if (sessionData != null) {
-            sessionData.setCandidateMessage(message);
+            sessionData.addCandidateMessage(message);
+        }
+    }
+
+    private void handleEndCandidates(WebSocketSession session) {
+        SessionData<TranslationCapability> sessionData = sessionRepository.sessions().get(session);
+        if (sessionData != null) {
             translatorMatchingService.matchOnOffer(session, sessionData);
         }
     }
