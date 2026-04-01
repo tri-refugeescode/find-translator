@@ -2,9 +2,11 @@ package org.madridforrefugees.portfolio.find_translator_backend.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Triple;
 import org.madridforrefugees.portfolio.find_translator_backend.domain.SessionData;
 import org.madridforrefugees.portfolio.find_translator_backend.domain.TranslationCapability;
 import org.madridforrefugees.portfolio.find_translator_backend.domain.TranslationNeed;
+import org.madridforrefugees.portfolio.find_translator_backend.repository.MatchedSessionsRepository;
 import org.madridforrefugees.portfolio.find_translator_backend.repository.SessionRepository;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -16,57 +18,55 @@ public class TranslatorMatchingService {
 
     private final SessionRepository<TranslationNeed> findTranslatorRepository;
     private final SessionRepository<TranslationCapability> offerTranslationRepository;
+    private final MatchedSessionsRepository matchedSessionsRepository;
 
-    public boolean matchOnOffer(WebSocketSession offerSession,
-                                SessionData<TranslationCapability> offerData) {
+    public void matchOnOffer(WebSocketSession offerSession,
+                             SessionData<TranslationCapability> offerData) {
         var matchedFindSession = findTranslatorRepository.sessions().entrySet().stream()
-                .filter(e -> e.getValue().getTranslationInfo() != null)
+                .filter(e -> e.getValue().hasInfo())
                 .filter(e -> translationPossible(e.getValue().getTranslationInfo(), offerData.getTranslationInfo()))
                 .findAny();
         if (matchedFindSession.isPresent()) {
             var findSession = matchedFindSession.get().getKey();
             var findData = matchedFindSession.get().getValue();
 
-            exchangeMessages(findSession, findData, offerSession, offerData);
-            return true;
-        } else {
-            return false;
+            moveToMatchedSessions(findSession, findData, offerSession, offerData);
+            exchangeOffer(findSession, offerData);
         }
     }
 
-    public boolean matchOnFind(WebSocketSession findSession,
-                               SessionData<TranslationNeed> findData) {
+    public void matchOnFind(WebSocketSession findSession,
+                            SessionData<TranslationNeed> findData) {
         var matchedOfferSession = offerTranslationRepository.sessions().entrySet().stream()
-                .filter(e -> e.getValue().getTranslationInfo() != null)
+                .filter(e -> e.getValue().isComplete())
                 .filter(e -> translationPossible(findData.getTranslationInfo(), e.getValue().getTranslationInfo()))
                 .findAny();
         if (matchedOfferSession.isPresent()) {
             var offerSession = matchedOfferSession.get().getKey();
             var offerData = matchedOfferSession.get().getValue();
 
-            exchangeMessages(findSession, findData, offerSession, offerData);
-            return true;
-        } else {
-            return false;
+            moveToMatchedSessions(findSession, findData, offerSession, offerData);
+            exchangeOffer(findSession, offerData);
         }
     }
 
-    private void exchangeMessages(WebSocketSession findSession,
-                                  SessionData<TranslationNeed> findData,
-                                  WebSocketSession offerSession,
-                                  SessionData<TranslationCapability> offerData) {
-        if (findSession.isOpen() && offerSession.isOpen()) {
-            findTranslatorRepository.sessions().remove(findSession);
-            offerTranslationRepository.sessions().remove(offerSession);
+    private void moveToMatchedSessions(WebSocketSession findSession,
+                                       SessionData<TranslationNeed> findData,
+                                       WebSocketSession offerSession,
+                                       SessionData<TranslationCapability> offerData) {
+        findTranslatorRepository.sessions().remove(findSession);
+        offerTranslationRepository.sessions().remove(offerSession);
+        matchedSessionsRepository.matchedSessions().put(findSession, Triple.of(findData, offerSession, offerData));
+    }
 
+    private void exchangeOffer(WebSocketSession findSession,
+                               SessionData<TranslationCapability> offerData) {
+        if (findSession.isOpen()) {
             try {
-                findSession.sendMessage(offerData.getInfoMessage());
-                offerSession.sendMessage(findData.getInfoMessage());
+                findSession.sendMessage(offerData.getRtcMessage());
                 findSession.sendMessage(offerData.getCandidateMessage());
-                offerSession.sendMessage(findData.getCandidateMessage());
             } catch (IOException e) {
-                log.error("Error exchanging messages between find & offer sessions: {} and {}",
-                        findSession.getId(), offerSession.getId(), e);
+                log.error("Error exchanging offer message to find sessions: {}", findSession.getId(), e);
             }
         }
     }

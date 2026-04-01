@@ -8,6 +8,7 @@ import lombok.experimental.Accessors;
 public enum EventType {
     FIND_TRANSLATOR("find-translator"),
     OFFER_TRANSLATION("offer-translation"),
+    ACCEPT_TRANSLATOR("accept-translator"),
     REGISTER_CANDIDATE("register-candidate");
 
     public static final String PATH = "eventType";

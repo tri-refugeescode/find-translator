@@ -14,6 +14,15 @@ import org.springframework.web.socket.TextMessage;
 @AllArgsConstructor
 public class SessionData<T> {
     private T translationInfo;
-    private TextMessage infoMessage;
+    private TextMessage rtcMessage;
     private TextMessage candidateMessage;
+
+    public boolean hasInfo() {
+        return translationInfo != null;
+    }
+
+    public boolean isComplete() {
+        return translationInfo != null && rtcMessage != null && candidateMessage != null;
+    }
+
 }

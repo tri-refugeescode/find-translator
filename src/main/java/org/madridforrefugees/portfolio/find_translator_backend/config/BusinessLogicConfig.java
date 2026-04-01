@@ -5,11 +5,13 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Triple;
 import org.madridforrefugees.portfolio.find_translator_backend.domain.SessionData;
 import org.madridforrefugees.portfolio.find_translator_backend.domain.TranslationCapability;
 import org.madridforrefugees.portfolio.find_translator_backend.domain.TranslationNeed;
 import org.madridforrefugees.portfolio.find_translator_backend.handler.FindTranslatorHandler;
 import org.madridforrefugees.portfolio.find_translator_backend.handler.OfferTranslationHandler;
+import org.madridforrefugees.portfolio.find_translator_backend.repository.MatchedSessionsRepository;
 import org.madridforrefugees.portfolio.find_translator_backend.repository.SessionRepository;
 import org.madridforrefugees.portfolio.find_translator_backend.service.TranslatorMatchingService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,15 +51,27 @@ public class BusinessLogicConfig {
     }
 
     @Bean
+    public MatchedSessionsRepository matchedSessionsRepository() {
+        Cache<WebSocketSession, Triple<SessionData<TranslationNeed>, WebSocketSession, SessionData<TranslationCapability>>> cache = Caffeine.newBuilder()
+                .expireAfterWrite(translatorMatchingProperties.findActiveTime())
+                .maximumSize(translatorMatchingProperties.maxFindSessions())
+                .weakKeys()
+                .build();
+        return new MatchedSessionsRepository(cache.asMap());
+    }
+
+    @Bean
     public TranslatorMatchingService translatorMatchingService(SessionRepository<TranslationNeed> findTranslatorRepository,
-                                                               SessionRepository<TranslationCapability> offerTranslationRepository) {
-        return new TranslatorMatchingService(findTranslatorRepository, offerTranslationRepository);
+                                                               SessionRepository<TranslationCapability> offerTranslationRepository,
+                                                               MatchedSessionsRepository matchedSessionsRepository) {
+        return new TranslatorMatchingService(findTranslatorRepository, offerTranslationRepository, matchedSessionsRepository);
     }
 
     @Bean
     public FindTranslatorHandler findTranslatorHandler(SessionRepository<TranslationNeed> findTranslatorRepository,
+                                                       MatchedSessionsRepository matchedSessionsRepository,
                                                        TranslatorMatchingService translatorMatchingService) {
-        return new FindTranslatorHandler(findTranslatorRepository, objectMapper, translatorMatchingService);
+        return new FindTranslatorHandler(findTranslatorRepository, matchedSessionsRepository, objectMapper, translatorMatchingService);
     }
 
     @Bean
