@@ -46,10 +46,14 @@ public class OfferTranslationHandler extends BaseHandler<TranslationCapability> 
         var sessionData = sessionRepository.sessions().get(session);
         if (sessionData != null && translationCapability.isValid()) {
             sessionData.setTranslationInfo(translationCapability).setRtcMessage(message);
+
+            if (sessionData.getCandidateMessages().contains(null)) {
+                translatorMatchingService.matchOnOffer(session, sessionData);
+            }
         }
     }
 
-    void handleRegisterCandidate(WebSocketSession session, TextMessage message) {
+    private void handleRegisterCandidate(WebSocketSession session, TextMessage message) {
         SessionData<TranslationCapability> sessionData = sessionRepository.sessions().get(session);
         if (sessionData != null) {
             sessionData.addCandidateMessage(message);
@@ -59,7 +63,11 @@ public class OfferTranslationHandler extends BaseHandler<TranslationCapability> 
     private void handleEndCandidates(WebSocketSession session) {
         SessionData<TranslationCapability> sessionData = sessionRepository.sessions().get(session);
         if (sessionData != null) {
-            translatorMatchingService.matchOnOffer(session, sessionData);
+            sessionData.addCandidateMessage(null); // null element indicates end of candidates
+
+            if (sessionData.getRtcMessage() != null) {
+                translatorMatchingService.matchOnOffer(session, sessionData);
+            }
         }
     }
 

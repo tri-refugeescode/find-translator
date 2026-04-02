@@ -8,9 +8,12 @@ import org.madridforrefugees.portfolio.find_translator_backend.domain.Translatio
 import org.madridforrefugees.portfolio.find_translator_backend.domain.TranslationNeed;
 import org.madridforrefugees.portfolio.find_translator_backend.repository.MatchedSessionsRepository;
 import org.madridforrefugees.portfolio.find_translator_backend.repository.SessionRepository;
+import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -69,7 +72,7 @@ public class TranslatorMatchingService {
         if (findSession.isOpen()) {
             try {
                 findSession.sendMessage(offerData.getRtcMessage());
-                for (var candidate : offerData.getCandidateMessages()) {
+                for (var candidate : filterOutNulls(offerData.getCandidateMessages())) {
                     findSession.sendMessage(candidate);
                 }
             } catch (IOException e) {
@@ -78,20 +81,23 @@ public class TranslatorMatchingService {
         }
     }
 
-    public void exchangeAccept(WebSocketSession findSession) {
-        var data = matchedSessionsRepository.matchedSessions().get(findSession);
-        if (data != null && data.getMiddle().isOpen()) {
+    public void exchangeAccept(Triple<SessionData<TranslationNeed>, WebSocketSession, SessionData<TranslationCapability>> data) {
+        if (data.getMiddle().isOpen()) {
             var offerSession = data.getMiddle();
             var findData = data.getLeft();
             try {
                 offerSession.sendMessage(findData.getRtcMessage());
-                for (var candidate : findData.getCandidateMessages()) {
+                for (var candidate : filterOutNulls(findData.getCandidateMessages())) {
                     offerSession.sendMessage(candidate);
                 }
             } catch (IOException e) {
                 log.error("Error exchanging accept message to offer session: {}", offerSession.getId(), e);
             }
         }
+    }
+
+    private List<TextMessage> filterOutNulls(List<TextMessage> candidateMessages) {
+        return candidateMessages.stream().filter(Objects::nonNull).toList();
     }
 
 }

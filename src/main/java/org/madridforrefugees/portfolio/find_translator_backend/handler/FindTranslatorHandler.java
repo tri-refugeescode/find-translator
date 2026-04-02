@@ -31,7 +31,7 @@ public class FindTranslatorHandler extends BaseHandler<TranslationNeed> {
         var messageContent = objectMapper.readTree(message.getPayload());
         var eventType = messageContent.path(EventType.PATH).stringValue();
         if (FIND_TRANSLATOR.text().equals(eventType)) {
-            handleFindTranslator(session, message, messageContent);
+            handleFindTranslator(session, messageContent);
         } else if (ACCEPT_TRANSLATOR.text().equals(eventType)) {
             handleAcceptTranslator(session, message);
         } else if (REGISTER_CANDIDATE.text().equals(eventType)) {
@@ -44,26 +44,29 @@ public class FindTranslatorHandler extends BaseHandler<TranslationNeed> {
     }
 
     private void handleFindTranslator(WebSocketSession session,
-                                      TextMessage message,
                                       JsonNode messageContent) {
         var translationNeed = objectMapper.treeToValue(messageContent.path(TranslationNeed.PATH), TranslationNeed.class);
         var sessionData = sessionRepository.sessions().get(session);
         if (sessionData != null && translationNeed.isValid()) {
-            sessionData.setTranslationInfo(translationNeed).setRtcMessage(message);
+            sessionData.setTranslationInfo(translationNeed);
             translatorMatchingService.matchOnFind(session, sessionData);
         }
     }
 
-    void handleAcceptTranslator(WebSocketSession session,
-                                TextMessage message) {
+    private void handleAcceptTranslator(WebSocketSession session,
+                                        TextMessage message) {
         var data = matchedSessionsRepository.matchedSessions().get(session);
         if (data != null) {
             data.getLeft().setRtcMessage(message);
+
+            if (data.getLeft().getCandidateMessages().contains(null)) {
+                translatorMatchingService.exchangeAccept(data);
+            }
         }
     }
 
-    void handleRegisterCandidate(WebSocketSession session,
-                                 TextMessage message) {
+    private void handleRegisterCandidate(WebSocketSession session,
+                                         TextMessage message) {
         var data = matchedSessionsRepository.matchedSessions().get(session);
         if (data != null) {
             data.getLeft().addCandidateMessage(message);
@@ -71,7 +74,14 @@ public class FindTranslatorHandler extends BaseHandler<TranslationNeed> {
     }
 
     private void handleEndCandidates(WebSocketSession session) {
-        translatorMatchingService.exchangeAccept(session);
+        var data = matchedSessionsRepository.matchedSessions().get(session);
+        if (data != null) {
+            data.getLeft().addCandidateMessage(null); // null element indicates end of candidates
+
+            if (data.getLeft().getRtcMessage() != null) {
+                translatorMatchingService.exchangeAccept(data);
+            }
+        }
     }
 
 }
