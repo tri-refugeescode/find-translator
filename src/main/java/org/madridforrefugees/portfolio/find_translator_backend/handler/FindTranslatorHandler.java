@@ -2,7 +2,6 @@ package org.madridforrefugees.portfolio.find_translator_backend.handler;
 
 import org.jspecify.annotations.NonNull;
 import org.madridforrefugees.portfolio.find_translator_backend.domain.EventType;
-import org.madridforrefugees.portfolio.find_translator_backend.domain.SessionData;
 import org.madridforrefugees.portfolio.find_translator_backend.domain.TranslationNeed;
 import org.madridforrefugees.portfolio.find_translator_backend.repository.MatchedSessionsRepository;
 import org.madridforrefugees.portfolio.find_translator_backend.repository.SessionRepository;
@@ -48,9 +47,9 @@ public class FindTranslatorHandler extends BaseHandler<TranslationNeed> {
                                       TextMessage message,
                                       JsonNode messageContent) {
         var translationNeed = objectMapper.treeToValue(messageContent.path(TranslationNeed.PATH), TranslationNeed.class);
-        if (translationNeed.isValid()) {
-            var sessionData = new SessionData<>(translationNeed, message);
-            sessionRepository.sessions().put(session, sessionData);
+        var sessionData = sessionRepository.sessions().get(session);
+        if (sessionData != null && translationNeed.isValid()) {
+            sessionData.setTranslationInfo(translationNeed).setRtcMessage(message);
             translatorMatchingService.matchOnFind(session, sessionData);
         }
     }

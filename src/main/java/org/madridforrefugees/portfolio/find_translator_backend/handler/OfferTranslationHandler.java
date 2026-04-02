@@ -43,8 +43,9 @@ public class OfferTranslationHandler extends BaseHandler<TranslationCapability> 
                                         TextMessage message,
                                         JsonNode messageContent) {
         var translationCapability = objectMapper.treeToValue(messageContent.path(TranslationCapability.PATH), TranslationCapability.class);
-        if (translationCapability.isValid()) {
-            sessionRepository.sessions().put(session, new SessionData<>(translationCapability, message));
+        var sessionData = sessionRepository.sessions().get(session);
+        if (sessionData != null && translationCapability.isValid()) {
+            sessionData.setTranslationInfo(translationCapability).setRtcMessage(message);
         }
     }
 
