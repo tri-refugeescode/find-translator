@@ -1,5 +1,6 @@
 package org.madridforrefugees.portfolio.find_translator_backend.handler;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.madridforrefugees.portfolio.find_translator_backend.domain.EventType;
 import org.madridforrefugees.portfolio.find_translator_backend.domain.SessionData;
@@ -14,6 +15,7 @@ import tools.jackson.databind.ObjectMapper;
 import static org.madridforrefugees.portfolio.find_translator_backend.domain.EventType.OFFER_TRANSLATION;
 import static org.madridforrefugees.portfolio.find_translator_backend.domain.EventType.REGISTER_CANDIDATE;
 
+@Slf4j
 public class OfferTranslationHandler extends BaseHandler<TranslationCapability> {
 
 
@@ -46,6 +48,8 @@ public class OfferTranslationHandler extends BaseHandler<TranslationCapability> 
         var sessionData = sessionRepository.sessions().get(session);
         if (sessionData != null && translationCapability.isValid()) {
             sessionData.setTranslationInfo(translationCapability).setRtcMessage(message);
+            log.info("New {} set in offer translation sessions (current size={})",
+                    translationCapability, sessionRepository.sessions().size());
 
             if (sessionData.getCandidateMessages().contains(null)) {
                 translatorMatchingService.matchOnOffer(session, sessionData);

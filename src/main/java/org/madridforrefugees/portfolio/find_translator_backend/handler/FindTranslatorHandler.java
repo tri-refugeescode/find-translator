@@ -1,5 +1,6 @@
 package org.madridforrefugees.portfolio.find_translator_backend.handler;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.madridforrefugees.portfolio.find_translator_backend.domain.EventType;
 import org.madridforrefugees.portfolio.find_translator_backend.domain.TranslationNeed;
@@ -13,6 +14,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import static org.madridforrefugees.portfolio.find_translator_backend.domain.EventType.*;
 
+@Slf4j
 public class FindTranslatorHandler extends BaseHandler<TranslationNeed> {
 
     private final MatchedSessionsRepository matchedSessionsRepository;
@@ -49,6 +51,9 @@ public class FindTranslatorHandler extends BaseHandler<TranslationNeed> {
         var sessionData = sessionRepository.sessions().get(session);
         if (sessionData != null && translationNeed.isValid()) {
             sessionData.setTranslationInfo(translationNeed);
+            log.info("New {} set in find translator sessions (current size={})",
+                    translationNeed, sessionRepository.sessions().size());
+
             translatorMatchingService.matchOnFind(session, sessionData);
         }
     }

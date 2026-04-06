@@ -65,6 +65,9 @@ public class TranslatorMatchingService {
         findTranslatorRepository.sessions().remove(findSession);
         offerTranslationRepository.sessions().remove(offerSession);
         matchedSessionsRepository.matchedSessions().put(findSession, Triple.of(findData, offerSession, offerData));
+        log.info("A {} was matched to a {} (current session sizes find={}, offer={}, matched={})",
+                findData.getTranslationInfo(), offerData.getTranslationInfo(),
+                findTranslatorRepository.sessions().size(), offerTranslationRepository.sessions().size(), matchedSessionsRepository.matchedSessions().size());
     }
 
     private void exchangeOffer(WebSocketSession findSession,
