@@ -53,7 +53,7 @@ public class BusinessLogicConfig {
     @Bean
     public MatchedSessionsRepository matchedSessionsRepository() {
         Cache<WebSocketSession, Triple<SessionData<TranslationNeed>, WebSocketSession, SessionData<TranslationCapability>>> cache = Caffeine.newBuilder()
-                .expireAfterWrite(translatorMatchingProperties.findActiveTime())
+                .expireAfterWrite(translatorMatchingProperties.matchedActiveTime())
                 .maximumSize(translatorMatchingProperties.maxFindSessions())
                 .weakKeys()
                 .build();

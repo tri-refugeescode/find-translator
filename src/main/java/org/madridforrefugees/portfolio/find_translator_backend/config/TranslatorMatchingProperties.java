@@ -12,5 +12,6 @@ import java.time.Duration;
 public record TranslatorMatchingProperties(@NotNull Duration findActiveTime,
                                            @Min(1) int maxFindSessions,
                                            @NotNull Duration offerActiveTime,
-                                           @Min(1) int maxOfferSessions) {
+                                           @Min(1) int maxOfferSessions,
+                                           @NotNull Duration matchedActiveTime) {
 }
